@@ -1,2 +1,2 @@
-Bouncer - A Revel Framework module for authentication
-============================================
+# Bouncer
+## A Revel framework module for authentication
