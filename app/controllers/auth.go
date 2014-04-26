@@ -15,18 +15,23 @@ type Test struct {
 	Other string
 }
 
+func (c Auth) StartAuth() revel.Result {
+	return c.RenderJson(c.Params)
+}
+
 func (c Auth) Basic() revel.Result {
 	t := Test{"Paul", "LoginBasic"}
 	return c.RenderJson(t)
 }
 
 func (c Auth) Facebook() revel.Result {
+
 	// get Facebook-related AuthConfig settings
 	x := new(providers.AuthConfig)
 	x.Name = "facebook" // hard-coded; temporary
 	x.AuthRealm = "https://graph.facebook.com/"
 
-	// new a Facebook provider with these config settings
+	// start a Facebook provider with these config settings
 	p := providers.NewFacebookAuthProvider(x)
 
 	// start the auth process and redirect to Facebook

@@ -17,7 +17,7 @@ FacebookDefaultAuthConfig := AuthConfig {
 	AccessTokenUrl: "https://graph.facebook.com/oauth/access_token"
 }
 
-func NewFacebookAuthProvider(config *AuthConfig) *FacebookAuthProvider {
+func New(config *AuthConfig) *FacebookAuthProvider {
 	provider := new(FacebookAuthProvider)
 	provider.Name = config.Name
 	provider.AuthRealm = config.AuthRealm

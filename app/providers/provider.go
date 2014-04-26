@@ -1,6 +1,9 @@
 package providers
 
-import "github.com/google/go-querystring/query"
+import (
+	"github.com/google/go-querystring/query"
+	"reflect"
+)
 
 type AuthProvider struct {
 	AuthConfig

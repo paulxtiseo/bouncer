@@ -23,4 +23,5 @@ type RequestOptions struct {
 
 type Authorizer interface {
 	GetAuthInitatorUrl(baseUrl string, state *AuthState, options *RequestOptions) (string, error)
+	New(config *AuthConfig)
 }
