@@ -9,6 +9,8 @@ type AuthProvider struct {
 	AuthConfig
 }
 
+//func GenerateProvider()
+
 func (a *AuthProvider) GetAuthInitatorUrl(baseUrl string, state *AuthState, options *RequestOptions) (string, error) {
 
 	if baseUrl == nil {

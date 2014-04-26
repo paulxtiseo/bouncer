@@ -10,18 +10,13 @@ type Auth struct {
 	*revel.Controller
 }
 
-type Test struct {
+type Test struct { // TODO: eventually delete this
 	Name  string
 	Other string
 }
 
 func (c Auth) StartAuth() revel.Result {
 	return c.RenderJson(c.Params)
-}
-
-func (c Auth) Basic() revel.Result {
-	t := Test{"Paul", "LoginBasic"}
-	return c.RenderJson(t)
 }
 
 func (c Auth) Facebook() revel.Result {
