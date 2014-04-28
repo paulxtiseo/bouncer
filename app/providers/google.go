@@ -4,10 +4,20 @@ type GoogleAuthProvider struct {
 	AuthProvider
 }
 
-func New(config *AuthConfig) *GoogleAuthProvider {
-	// setup provider
+var DefaultGoogleAuthConfig = AuthConfig{
+	Name:            "google",
+	DisplayName:     "Google",
+	AuthRealm:       "",
+	AuthProvider:    "",
+	CallbackUrl:     "",
+	ConsumerKey:     "",
+	ConsumerSecret:  "",
+	RequestTokenUrl: "",
+	AuthorizeUrl:    "https://accounts.google.com/o/oauth2/auth",
+	AccessTokenUrl:  "https://accounts.google.com/o/oauth2/token",
+}
+
+func NewGoogleAuthProvider(config *AuthConfig) Authorizer {
 	provider := new(GoogleAuthProvider)
-	provider.Name = config.Name
-	provider.AuthRealm = config.AuthRealm
 	return provider
 }

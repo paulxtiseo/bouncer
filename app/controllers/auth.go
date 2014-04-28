@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	//"code.google.com/p/go.crypto/bcrypt"
 	"github.com/paulxtiseo/bouncer/app/providers"
 	"github.com/revel/revel"
 )
@@ -16,9 +15,23 @@ type Test struct { // TODO: eventually delete this
 }
 
 func (c Auth) StartAuth() revel.Result {
-	return c.RenderJson(c.Params)
+
+	requestedProvider := c.Params.Get("provider")
+
+	// check if provider requested is in allowed list in Providers
+	// if so, return the Provider for use
+	provider, found := providers.AllowedProviders[requestedProvider]
+
+	if found {
+		// instantiate a provider and kickoff auth
+		return c.RenderJson(provider)
+	}
+
+	return c.NotFound("Provider requested not found in configuration.")
+
 }
 
+/*
 func (c Auth) Facebook() revel.Result {
 
 	// get Facebook-related AuthConfig settings
@@ -42,3 +55,4 @@ func (c Auth) Google() revel.Result {
 	t := Test{"Paul", "LoginGoogle"}
 	return c.RenderJson(t)
 }
+*/
