@@ -7,7 +7,7 @@ type FacebookAuthProvider struct {
 var DefaultFacebookAuthConfig = AuthConfig{
 	Name:            "facebook",
 	DisplayName:     "FaceBook",
-	AuthRealm:       "",
+	AuthRealm:       "https://graph.facebook.com/",
 	AuthProvider:    "",
 	CallbackUrl:     "",
 	ConsumerKey:     "",
@@ -19,5 +19,8 @@ var DefaultFacebookAuthConfig = AuthConfig{
 
 func NewFacebookAuthProvider(config *AuthConfig) Authorizer {
 	provider := new(FacebookAuthProvider)
+
+	// assert that we have key fields
+
 	return provider
 }
