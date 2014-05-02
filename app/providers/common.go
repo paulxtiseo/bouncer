@@ -3,10 +3,7 @@ package providers
 //----- structs ----------------
 
 type AuthConfig struct {
-	Name            string
-	DisplayName     string
 	AuthRealm       string
-	AuthProvider    string
 	CallbackUrl     string
 	ConsumerKey     string
 	ConsumerSecret  string

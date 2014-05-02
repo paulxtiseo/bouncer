@@ -1,34 +1,69 @@
 package providers
 
 import (
+	"encoding/json"
+	"errors"
 	"github.com/revel/revel"
 	"strings"
 )
 
-var AllowedProviders = make(map[string]NewAuthProvider)
+var AllowedProviderGenerators = make(map[string]NewAuthProvider)
+var AppAuthConfigs = make(map[string]AuthConfig)
 
 func init() {
 
 	revel.OnAppStart(func() {
+
 		// setup providers allowed in app.config's auth.providersallowed setting
-		result, found := revel.Config.String("auth.providersallowed")
+		configItm, found := revel.Config.String("auth.providersallowed")
 		if found {
-			results := strings.Split(result, ",")
-			for itm := 0; itm < len(results); itm++ {
-				switch strings.ToLower(results[itm]) {
+			revel.INFO.Printf("Setting up the following providers: %s", configItm)
+
+			configResults := strings.Split(configItm, ",")
+
+			for idx := 0; idx < len(configResults); idx++ {
+				providerItm := strings.ToLower(configResults[idx])
+
+				// set the AuthProvider for each type requested
+				switch providerItm {
 				case "facebook":
-					AllowedProviders["facebook"] = NewFacebookAuthProvider
+					AllowedProviderGenerators["facebook"] = NewFacebookAuthProvider
 				case "google":
-					AllowedProviders["google"] = NewGoogleAuthProvider
+					AllowedProviderGenerators["google"] = NewGoogleAuthProvider
 				case "linkedin":
-					AllowedProviders["linkedin"] = NewLinkedinAuthProvider
+					AllowedProviderGenerators["linkedin"] = NewLinkedinAuthProvider
 				default:
-					revel.WARN.Printf("Provider <%s> is not known.\n", results[itm])
+					revel.WARN.Printf("Provider <%s> is not known.", providerItm)
 				}
+
+				// pull AuthConfig settings from app.conf
+				ac, err := generateAuthConfigFromAppConfig(providerItm)
+				if err != nil {
+					revel.ERROR.Fatal(err)
+				} else {
+					AppAuthConfigs[providerItm] = ac
+					revel.INFO.Printf("Configured %s for authentication.", providerItm)
+				}
+
 			}
 		} else {
 			revel.ERROR.Fatal("No auth.providersallowed setting was found in app.conf.")
 		}
+
 	})
 
+}
+
+func generateAuthConfigFromAppConfig(provider string) (ac AuthConfig, err error) {
+	settings, foundSettings := revel.Config.String("auth." + provider + ".authconfig")
+	if foundSettings {
+		err = json.Unmarshal([]byte(settings), &ac)
+		if err != nil {
+			err = errors.New("Error reading auth." + provider + ".authconfig in app.conf.")
+			return
+		}
+		return
+	}
+	err = errors.New("auth." + provider + ".authconfig not found.")
+	return
 }
