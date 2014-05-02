@@ -1,6 +1,6 @@
+// Package providers contains primitives related to the authentication process
+// provided by the Bouncer module for the Revel Framework.
 package providers
-
-//----- structs ----------------
 
 type AuthConfig struct {
 	AuthRealm       string
@@ -10,6 +10,7 @@ type AuthConfig struct {
 	RequestTokenUrl string
 	AuthorizeUrl    string
 	AccessTokenUrl  string
+	Permissions     string
 }
 
 type AuthState struct {
@@ -27,10 +28,13 @@ type AuthProvider struct {
 
 //----- functions ----------------
 
+// NewAuthProvider is a generic function type that returns a struct that implements the Authorizer interface
+// Given an AuthConfig struct, the Authorizer returned will also be pre-configured for use
 type NewAuthProvider func(*AuthConfig) Authorizer
 
 //----- interfaces ----------------
 
 type Authorizer interface {
-	GetAuthInitatorUrl(baseUrl string, state *AuthState, options *RequestOptions) (string, error)
+	GetAuthInitatorUrl(state *AuthState, options *RequestOptions) (url string, err error)
+	MapAuthConfigToStartAuthMap() (v map[string][]string)
 }

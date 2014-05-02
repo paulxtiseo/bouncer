@@ -12,48 +12,25 @@ type Auth struct {
 }
 
 func (c Auth) StartAuth() revel.Result {
-
+	// get provider requested in /auth/:provider and begin the authenticationm
+	// by redirecting to the authentication provider's AuthorizeUrl per config
 	requestedProvider := c.Params.Get("provider")
 	settings, foundSettings := providers.AppAuthConfigs[requestedProvider]
 	if foundSettings {
-		return c.RenderJson(settings)
-	}
-	return c.RenderJson(settings)
-	/*
+		// use the generator function to create the linked provider for the request
 		generator, foundProvider := providers.AllowedProviderGenerators[requestedProvider]
-
-		if foundProvider && foundSettings {
-			provider := generator(settings)
-
-			return c.RenderJson(provider.GetAuthInitatorUrl())
+		if foundProvider {
+			// prep the provider and then get the URL we need to visit to start auth
+			provider := generator(&settings)
+			theUrl, err := provider.GetAuthInitatorUrl(nil, nil)
+			if err != nil {
+				revel.ERROR.Printf("Error generating the auth URL: %+v", err)
+				return c.RenderError(err)
+			} else {
+				return c.Redirect(theUrl)
+			}
 		}
-
-		return c.RenderError(errors.New("Provider or settings requested not found in configuration."))
-	*/
-}
-
-/*
-func (c Auth) Facebook() revel.Result {
-
-	// get Facebook-related AuthConfig settings
-	x := new(providers.AuthConfig)
-	x.Name = "facebook" // hard-coded; temporary
-	x.AuthRealm = "https://graph.facebook.com/"
-
-	// start a Facebook provider with these config settings
-	p := providers.NewFacebookAuthProvider(x)
-
-	// start the auth process and redirect to Facebook
-	urlForAuth, err := p.GetAuthInitatorUrl()
-	if err != nil {
-		return c.RenderError(err)
 	}
 
-	return c.RenderJson(p)
+	return c.NotFound("No authentication for %s configured for this site.", requestedProvider)
 }
-
-func (c Auth) Google() revel.Result {
-	t := Test{"Paul", "LoginGoogle"}
-	return c.RenderJson(t)
-}
-*/

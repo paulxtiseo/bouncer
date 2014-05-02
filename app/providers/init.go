@@ -32,8 +32,10 @@ func init() {
 					AllowedProviderGenerators["google"] = NewGoogleAuthProvider
 				case "linkedin":
 					AllowedProviderGenerators["linkedin"] = NewLinkedinAuthProvider
+				case "twitter":
+					AllowedProviderGenerators["twitter"] = NewTwitterAuthProvider
 				default:
-					revel.WARN.Printf("Provider <%s> is not known.", providerItm)
+					revel.WARN.Printf("Provider <%s> is not known. Skipped.", providerItm)
 				}
 
 				// pull AuthConfig settings from app.conf

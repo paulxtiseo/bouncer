@@ -1,23 +1,49 @@
 package providers
 
-/*import (
-	"github.com/google/go-querystring/query"
-)*/
+import (
+	//"errors"
+	"fmt"
+	"github.com/revel/revel"
+	"net/url"
+)
 
-func (a *AuthProvider) GetAuthInitatorUrl(baseUrl string, state *AuthState, options *RequestOptions) (string, error) {
+// GetAuthInitatorUrl generates the URL that begins the auth process with any common provider.
+// At a minimum, the process requires:
+// 	- an authorization URL, set in AuthCofig.AuthorizeUrl before invoking this method
+// 	- the app's id with the authorizer, set in AuthConfig.ConsumerKey
+// 	- a callback URL, set in AuthConfig.CallbackUrl
+func (a *AuthProvider) GetAuthInitatorUrl(state *AuthState, options *RequestOptions) (returnUrl string, err error) {
 
-	if baseUrl == "" {
-		panic("Missing base URL in GetAuthInitatorUrl.")
+	// validate key items to generate auth URL
+	if a.AuthConfig.AuthorizeUrl == "" || a.AuthConfig.CallbackUrl == "" || a.AuthConfig.ConsumerKey == "" {
+		err = fmt.Errorf("Missing required config info in GetAuthInitatorUrl: {AuthorizeUrl: %s, CallbackUrl: %s, ConsumerKey: %s}", a.AuthConfig.AuthorizeUrl, a.AuthConfig.CallbackUrl, a.AuthConfig.ConsumerKey)
+		return
 	}
 
+	theUrl, parseErr := url.ParseRequestURI(a.AuthConfig.AuthorizeUrl)
+	if parseErr != nil {
+		err = fmt.Errorf("Bad URL in AuthorizeUrl: %s", a.AuthConfig.AuthorizeUrl)
+		return
+	}
+
+	// TODO: validate state and options
+
+	// create a Map of all necessary params to pass to authenticator
+	revel.INFO.Print("Calling MapAuthConfigToStartAuthMap")
+	valueMap := a.MapAuthConfigToStartAuthMap()
+	revel.INFO.Printf("GetAuthInitatorUrl: %+v", valueMap)
 	// convert state and add as a RequestOption
-	//options["state"] = query.Values(state).Encode() // TODO: convert to JSON string?
+	if state != nil {
+		//options["state"] = query.Values(state).Encode() // TODO: convert to JSON string?
+	}
 
 	// convert options into a QueryString
-	//queryString, queryErr := query.Values(options)
-	//if queryErr != nil {
-	//	return "", queryErr
-	//}
+	if options != nil {
+		//queryString, queryErr := query.Values(options)
+		//if queryErr != nil {
+		//	return "", queryErr
+		//}
+	}
 
-	return baseUrl /*+ "?" + queryString.Encode()*/, nil
+	return theUrl.String(), nil
 }
