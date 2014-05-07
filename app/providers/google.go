@@ -1,23 +1,40 @@
 package providers
 
-import "strings"
+import (
+	"net/url"
+	"strings"
+)
 
+// -- generator function ----
+
+func NewGoogleAuthProvider(config *AuthConfig) AuthProvider {
+
+	p := new(AuthProvider)
+	p.AuthConfig = *config
+	p.Name = "Facebook"
+
+	c := new(CommonAuthProvider)
+	p.CommonAuthProvider = *c
+
+	p.SpecializedAuthorizer = new(GoogleAuthProvider)
+
+	return *p
+}
+
+// -- provider ----
 type GoogleAuthProvider struct {
-	AuthProvider
 }
 
-func NewGoogleAuthProvider(config *AuthConfig) Authorizer {
-	provider := new(GoogleAuthProvider)
-	provider.AuthConfig = *config
-	return provider
-}
-
-func (a *GoogleAuthProvider) MapAuthConfigToStartAuthMap() (v map[string][]string) {
-
-	v["client_id"] = append(v["client_id"], a.AuthConfig.ConsumerKey)
-	v["redirect_uri"] = append(v["redirect_uri"], a.AuthConfig.CallbackUrl)
+func (a *GoogleAuthProvider) MapAuthConfigToUrlValues(parent *AuthProvider) (v url.Values, err error) {
+	v = url.Values{}
+	v.Add("client_id", parent.ConsumerKey)
+	v.Add("redirect_uri", parent.CallbackUrl)
 	// TODO: state?
-	v["reponse_type"] = append(v["reponse_type"], "code")
-	v["scope"] = strings.Split(a.AuthConfig.Permissions, ",")
+	v.Add("reponse_type", "code")
+	perms := strings.Split(parent.Permissions, ",")
+	for idx := 0; idx < len(perms); idx++ {
+		v.Add("scope", perms[idx])
+	}
 	return
+
 }

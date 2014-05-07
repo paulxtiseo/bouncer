@@ -1,27 +1,40 @@
 package providers
 
 import (
-	"github.com/revel/revel"
+	"net/url"
 	"strings"
 )
 
+// -- generator function ----
+
+func NewFacebookAuthProvider(config *AuthConfig) AuthProvider {
+
+	p := new(AuthProvider)
+	p.AuthConfig = *config
+	p.Name = "Facebook"
+
+	c := new(CommonAuthProvider)
+	p.CommonAuthProvider = *c
+
+	p.SpecializedAuthorizer = new(FacebookAuthProvider)
+
+	return *p
+}
+
+// -- provider ----
 type FacebookAuthProvider struct {
-	AuthProvider
 }
 
-func NewFacebookAuthProvider(config *AuthConfig) Authorizer {
-	provider := new(FacebookAuthProvider)
-	provider.AuthConfig = *config
-	return provider
-}
-
-func (a *FacebookAuthProvider) MapAuthConfigToStartAuthMap() (v map[string][]string) {
-	revel.INFO.Print("MapAuthConfigToStartAuthMap")
-	revel.INFO.Printf("object data: %+v", a)
-	v["client_id"] = append(v["client_id"], a.AuthConfig.ConsumerKey)
-	v["redirect_uri"] = append(v["redirect_uri"], a.AuthConfig.CallbackUrl)
+func (a *FacebookAuthProvider) MapAuthConfigToUrlValues(parent *AuthProvider) (v url.Values, err error) {
+	v = url.Values{}
+	v.Add("client_id", parent.ConsumerKey)
+	v.Add("redirect_uri", parent.CallbackUrl)
 	// TODO: state?
-	v["reponse_type"] = append(v["reponse_type"], "code")
-	v["scope"] = strings.Split(a.AuthConfig.Permissions, ",")
+	v.Add("reponse_type", "code")
+	perms := strings.Split(parent.Permissions, ",")
+	for idx := 0; idx < len(perms); idx++ {
+		v.Add("scope", perms[idx])
+	}
 	return
+
 }

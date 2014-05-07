@@ -2,7 +2,12 @@
 // provided by the Bouncer module for the Revel Framework.
 package providers
 
+import (
+	"net/url"
+)
+
 type AuthConfig struct {
+	Name            string
 	AuthRealm       string
 	CallbackUrl     string
 	ConsumerKey     string
@@ -23,18 +28,27 @@ type RequestOptions struct {
 
 type AuthProvider struct {
 	AuthConfig
-	Authorizer
+	CommonAuthProvider
+	SpecializedAuthorizer
+}
+
+//----- interfaces ----------------
+
+type Authorizer interface {
+	CommonAuthorizer
+	SpecializedAuthorizer
+}
+
+type CommonAuthorizer interface {
+	GetAuthInitatorUrl(state *AuthState, options *RequestOptions, parent AuthProvider) (returnUrl string, err error)
+}
+
+type SpecializedAuthorizer interface {
+	MapAuthConfigToUrlValues(parent *AuthProvider) (v url.Values, err error)
 }
 
 //----- functions ----------------
 
 // NewAuthProvider is a generic function type that returns a struct that implements the Authorizer interface
 // Given an AuthConfig struct, the Authorizer returned will also be pre-configured for use
-type NewAuthProvider func(*AuthConfig) Authorizer
-
-//----- interfaces ----------------
-
-type Authorizer interface {
-	GetAuthInitatorUrl(state *AuthState, options *RequestOptions) (url string, err error)
-	MapAuthConfigToStartAuthMap() (v map[string][]string)
-}
+type NewAuthProvider func(*AuthConfig) AuthProvider

@@ -22,7 +22,7 @@ func (c Auth) StartAuth() revel.Result {
 		if foundProvider {
 			// prep the provider and then get the URL we need to visit to start auth
 			provider := generator(&settings)
-			theUrl, err := provider.GetAuthInitatorUrl(nil, nil)
+			theUrl, err := provider.GetAuthInitatorUrl(nil, nil, &provider)
 			if err != nil {
 				revel.ERROR.Printf("Error generating the auth URL: %+v", err)
 				return c.RenderError(err)
