@@ -2,7 +2,6 @@ package providers
 
 import (
 	"net/url"
-	"strings"
 )
 
 // -- generator function ----
@@ -29,12 +28,8 @@ func (a *FacebookAuthProvider) MapAuthConfigToUrlValues(parent *AuthProvider) (v
 	v = url.Values{}
 	v.Add("client_id", parent.ConsumerKey)
 	v.Add("redirect_uri", parent.CallbackUrl)
-	// TODO: state?
 	v.Add("reponse_type", "code")
-	perms := strings.Split(parent.Permissions, ",")
-	for idx := 0; idx < len(perms); idx++ {
-		v.Add("scope", perms[idx])
-	}
+	v.Set("scope", parent.Permissions)
 	return
 
 }

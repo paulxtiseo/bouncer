@@ -8,7 +8,6 @@ import (
 
 type AuthConfig struct {
 	Name            string
-	AuthRealm       string
 	CallbackUrl     string
 	ConsumerKey     string
 	ConsumerSecret  string

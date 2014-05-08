@@ -34,3 +34,7 @@ func (c Auth) StartAuth() revel.Result {
 
 	return c.NotFound("No authentication for %s configured for this site.", requestedProvider)
 }
+
+func (c Auth) Callback() revel.Result {
+	return c.RenderText(c.Params.Encode())
+}

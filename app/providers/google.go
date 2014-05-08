@@ -2,7 +2,6 @@ package providers
 
 import (
 	"net/url"
-	"strings"
 )
 
 // -- generator function ----
@@ -27,14 +26,9 @@ type GoogleAuthProvider struct {
 
 func (a *GoogleAuthProvider) MapAuthConfigToUrlValues(parent *AuthProvider) (v url.Values, err error) {
 	v = url.Values{}
-	v.Add("client_id", parent.ConsumerKey)
-	v.Add("redirect_uri", parent.CallbackUrl)
-	// TODO: state?
-	v.Add("reponse_type", "code")
-	perms := strings.Split(parent.Permissions, ",")
-	for idx := 0; idx < len(perms); idx++ {
-		v.Add("scope", perms[idx])
-	}
+	v.Set("response_type", "code")
+	v.Set("client_id", parent.ConsumerKey)
+	v.Set("redirect_uri", parent.CallbackUrl)
+	v.Set("scope", parent.Permissions)
 	return
-
 }

@@ -45,6 +45,7 @@ func (a *CommonAuthProvider) GetAuthInitatorUrl(state *AuthState, options *Reque
 
 	// convert state and add as a RequestOption
 	if state != nil {
+
 		//options["state"] = query.Values(state).Encode() // TODO: convert to JSON string?
 	}
 
