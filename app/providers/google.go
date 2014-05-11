@@ -25,10 +25,18 @@ type GoogleAuthProvider struct {
 }
 
 func (a *GoogleAuthProvider) MapAuthConfigToUrlValues(parent *AuthProvider) (v url.Values, err error) {
+
 	v = url.Values{}
 	v.Set("response_type", "code")
 	v.Set("client_id", parent.ConsumerKey)
 	v.Set("redirect_uri", parent.CallbackUrl)
 	v.Set("scope", parent.Permissions)
+	v.Set("state", "gfhgdfhdgfhbfnfgngfddn")
+	return
+
+}
+
+func (a *GoogleAuthProvider) ConfirmAuth(parent *AuthProvider) (v url.Values, err error) {
+	v = url.Values{}
 	return
 }

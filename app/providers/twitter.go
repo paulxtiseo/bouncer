@@ -2,7 +2,8 @@ package providers
 
 import (
 	"net/url"
-	"strings"
+	"strconv"
+	"time"
 )
 
 // -- generator function ----
@@ -26,15 +27,22 @@ type TwitterAuthProvider struct {
 }
 
 func (a *TwitterAuthProvider) MapAuthConfigToUrlValues(parent *AuthProvider) (v url.Values, err error) {
+
 	v = url.Values{}
-	v.Add("client_id", parent.ConsumerKey)
-	v.Add("redirect_uri", parent.CallbackUrl)
-	// TODO: state?
-	v.Add("reponse_type", "code")
-	perms := strings.Split(parent.Permissions, ",")
-	for idx := 0; idx < len(perms); idx++ {
-		v.Add("scope", perms[idx])
-	}
+	v.Set("oauth_version", "1.0")
+	v.Set("oauth_nonce", generateNonce(32))
+	v.Set("oauth_timestamp", strconv.FormatInt(time.Now().Unix(), 10))
+	v.Set("oauth_consumer_key", parent.ConsumerKey)
+	v.Set("oauth_callback", parent.CallbackUrl)
+	// calculate signature
+	v.Set("oauth_signature_method", "HMAC-SHA1")
+	v.Set("oauth_signature", calculateOAuthSig("GET", parent.AuthorizeUrl, &v))
+	return
+
+}
+
+func (a *TwitterAuthProvider) ConfirmAuth(parent *AuthProvider) (v url.Values, err error) {
+	v = url.Values{}
 	return
 
 }

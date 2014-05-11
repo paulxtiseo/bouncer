@@ -3,6 +3,8 @@
 package providers
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"net/url"
 )
 
@@ -46,8 +48,24 @@ type SpecializedAuthorizer interface {
 	MapAuthConfigToUrlValues(parent *AuthProvider) (v url.Values, err error)
 }
 
-//----- functions ----------------
+//----- function types ----------------
 
 // NewAuthProvider is a generic function type that returns a struct that implements the Authorizer interface
 // Given an AuthConfig struct, the Authorizer returned will also be pre-configured for use
 type NewAuthProvider func(*AuthConfig) AuthProvider
+
+//----- private functions ----------------
+
+func generateNonce(size int) string {
+	s := make([]byte, size)
+	rand.Read(s)
+	en := base64.StdEncoding
+	d := make([]byte, en.EncodedLen(len(s)))
+	en.Encode(d, s)
+	return string(d)
+}
+
+// Compute an OAuth HMAC-SHA1 signature
+func calculateOAuthSig(method string, baseUrl string, params *url.Values) string {
+	return ""
+}

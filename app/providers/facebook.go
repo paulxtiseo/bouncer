@@ -25,11 +25,18 @@ type FacebookAuthProvider struct {
 }
 
 func (a *FacebookAuthProvider) MapAuthConfigToUrlValues(parent *AuthProvider) (v url.Values, err error) {
+
 	v = url.Values{}
-	v.Add("client_id", parent.ConsumerKey)
-	v.Add("redirect_uri", parent.CallbackUrl)
-	v.Add("reponse_type", "code")
+	v.Set("client_id", parent.ConsumerKey)
+	v.Set("redirect_uri", parent.CallbackUrl)
+	v.Set("response_type", "code")
 	v.Set("scope", parent.Permissions)
+	v.Set("state", "gfhgdfhdgfhbfnfgngfddn")
 	return
 
+}
+
+func (a *FacebookAuthProvider) ConfirmAuth(parent *AuthProvider) (v url.Values, err error) {
+	v = url.Values{}
+	return
 }

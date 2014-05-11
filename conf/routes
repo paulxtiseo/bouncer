@@ -1,2 +1,2 @@
 *		/auth/:provider				Auth.StartAuth
-*		/auth/:provider/callback	Auth.Callback
+*		/auth/:provider/callback	Auth.GetAccessToken

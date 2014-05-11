@@ -9,10 +9,18 @@ import (
 
 var AllowedProviderGenerators = make(map[string]NewAuthProvider)
 var AppAuthConfigs = make(map[string]AuthConfig)
+var SecurityKey string
 
 func init() {
 
 	revel.OnAppStart(func() {
+
+		// set security key to app.secret
+		sec, found := revel.Config.String("app.secret")
+		if !found {
+			revel.ERROR.Fatal("No app.secret setting was found in app.conf.")
+		}
+		SecurityKey = sec
 
 		// setup providers allowed in app.config's auth.providersallowed setting
 		configItm, found := revel.Config.String("auth.providersallowed")
