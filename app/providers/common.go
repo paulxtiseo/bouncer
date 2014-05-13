@@ -3,9 +3,14 @@
 package providers
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha1"
 	"encoding/base64"
+	"errors"
+	"github.com/revel/revel"
 	"net/url"
+	"strings"
 )
 
 type AuthConfig struct {
@@ -59,13 +64,41 @@ type NewAuthProvider func(*AuthConfig) AuthProvider
 func generateNonce(size int) string {
 	s := make([]byte, size)
 	rand.Read(s)
-	en := base64.StdEncoding
-	d := make([]byte, en.EncodedLen(len(s)))
-	en.Encode(d, s)
+
+	enc := base64.StdEncoding
+	d := make([]byte, enc.EncodedLen(len(s)))
+	enc.Encode(d, s)
+
 	return string(d)
 }
 
-// Compute an OAuth HMAC-SHA1 signature
-func calculateOAuthSig(method string, baseUrl string, params *url.Values) string {
-	return ""
+// Compute an OAuth HMAC-SHA1 signature based on request method, URL (unescaped), params, the app/consumer key and a token (optional)
+func calculateOAuthSig(method string, baseUrl string, params *url.Values, key string, token string) (msg string, err error) {
+
+	if method == "" {
+		err = errors.New("No method provided.")
+		return
+	}
+
+	if baseUrl == "" {
+		err = errors.New("No baseUrl provided.")
+		return
+	}
+
+	if key == "" {
+		err = errors.New("No key provided.")
+		return
+	}
+
+	base := url.QueryEscape(strings.ToUpper(method)) + "&" + url.QueryEscape(baseUrl) + "&" + url.QueryEscape(params.Encode())
+	revel.INFO.Println("calculateOAuthSig params: " + strings.Replace(params.Encode(), "%", "%%", -1))
+	revel.INFO.Println("calculateOAuthSig params: " + strings.Replace(params.Encode(), "%", "%%", -1))
+	revel.INFO.Println("calculateOAuthSig base: " + strings.Replace(strings.ToUpper(method), "%", "%%", -1) + "&" + strings.Replace(url.QueryEscape(baseUrl), "%", "%%", -1) + "&" + strings.Replace(url.QueryEscape(params.Encode()), "%", "%%", -1))
+	sign := url.QueryEscape(key) + "&" + url.QueryEscape(token)
+	revel.INFO.Println("calculateOAuthSig sign: " + strings.Replace(url.QueryEscape(key), "%", "%%", -1) + "&" + strings.Replace(url.QueryEscape(token), "%", "%%", -1))
+
+	enc := hmac.New(sha1.New, []byte(sign))
+	enc.Write([]byte(base))
+	revel.INFO.Println("calculateOAuthSig return: " + base64.StdEncoding.EncodeToString(enc.Sum(nil)))
+	return base64.StdEncoding.EncodeToString(enc.Sum(nil)), nil
 }
