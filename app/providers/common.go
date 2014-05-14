@@ -3,13 +3,15 @@
 package providers
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha1"
 	"encoding/base64"
 	"errors"
-	"github.com/revel/revel"
+	//"github.com/revel/revel"
 	"net/url"
+	"sort"
 	"strings"
 )
 
@@ -90,15 +92,134 @@ func calculateOAuthSig(method string, baseUrl string, params *url.Values, key st
 		return
 	}
 
-	base := url.QueryEscape(strings.ToUpper(method)) + "&" + url.QueryEscape(baseUrl) + "&" + url.QueryEscape(params.Encode())
-	revel.INFO.Println("calculateOAuthSig params: " + strings.Replace(params.Encode(), "%", "%%", -1))
-	revel.INFO.Println("calculateOAuthSig params: " + strings.Replace(params.Encode(), "%", "%%", -1))
-	revel.INFO.Println("calculateOAuthSig base: " + strings.Replace(strings.ToUpper(method), "%", "%%", -1) + "&" + strings.Replace(url.QueryEscape(baseUrl), "%", "%%", -1) + "&" + strings.Replace(url.QueryEscape(params.Encode()), "%", "%%", -1))
-	sign := url.QueryEscape(key) + "&" + url.QueryEscape(token)
-	revel.INFO.Println("calculateOAuthSig sign: " + strings.Replace(url.QueryEscape(key), "%", "%%", -1) + "&" + strings.Replace(url.QueryEscape(token), "%", "%%", -1))
+	base := escape(strings.ToUpper(method), encodeEverything) + "&" + escape(baseUrl, encodeEverything) + "&" + escape(encode(params), encodeEverything)
+	sign := escape(key, encodeEverything) + "&" + escape(token, encodeEverything)
 
 	enc := hmac.New(sha1.New, []byte(sign))
 	enc.Write([]byte(base))
-	revel.INFO.Println("calculateOAuthSig return: " + base64.StdEncoding.EncodeToString(enc.Sum(nil)))
 	return base64.StdEncoding.EncodeToString(enc.Sum(nil)), nil
+}
+
+//----- extracted from net/url for modding; needed access to the private escape() and shouldEscape() ----------------
+
+type encoding int
+
+const (
+	encodePath encoding = 1 + iota
+	encodeUserPassword
+	encodeQueryComponent
+	encodeFragment
+	encodeEverything // added this relative to original net/url, such that space is encoded to %20 not +
+)
+
+func encode(vals *url.Values) string {
+
+	v := *vals
+
+	if v == nil {
+		return ""
+	}
+
+	var buf bytes.Buffer
+	keys := make([]string, 0, len(v))
+	for k := range v {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		vs := v[k]
+		prefix := escape(k, encodeEverything) + "="
+		for _, v := range vs {
+			if buf.Len() > 0 {
+				buf.WriteByte('&')
+			}
+			buf.WriteString(prefix)
+			buf.WriteString(escape(v, encodeEverything))
+		}
+	}
+
+	return buf.String()
+}
+
+func escape(s string, mode encoding) string {
+	spaceCount, hexCount := 0, 0
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if shouldEscape(c, mode) {
+			if c == ' ' && mode == encodeQueryComponent {
+				spaceCount++
+			} else {
+				hexCount++
+			}
+		}
+	}
+
+	if spaceCount == 0 && hexCount == 0 {
+		return s
+	}
+
+	t := make([]byte, len(s)+2*hexCount)
+	j := 0
+	for i := 0; i < len(s); i++ {
+		switch c := s[i]; {
+		case c == ' ' && mode == encodeQueryComponent:
+			t[j] = '+'
+			j++
+		case shouldEscape(c, mode):
+			t[j] = '%'
+			t[j+1] = "0123456789ABCDEF"[c>>4]
+			t[j+2] = "0123456789ABCDEF"[c&15]
+			j += 3
+		default:
+			t[j] = s[i]
+			j++
+		}
+	}
+	return string(t)
+}
+
+func shouldEscape(c byte, mode encoding) bool {
+
+	if 'A' <= c && c <= 'Z' || 'a' <= c && c <= 'z' || '0' <= c && c <= '9' {
+		return false
+	}
+
+	switch c {
+	case '-', '_', '.', '~': // §2.3 Unreserved characters (mark)
+		return false
+
+	case '$', '&', '+', ',', '/', ':', ';', '=', '?', '@': // §2.2 Reserved characters (reserved)
+		// Different sections of the URL allow a few of
+		// the reserved characters to appear unescaped.
+		switch mode {
+		case encodePath: // §3.3
+			// The RFC allows : @ & = + $ but saves / ; , for assigning
+			// meaning to individual path segments. This package
+			// only manipulates the path as a whole, so we allow those
+			// last two as well. That leaves only ? to escape.
+			return c == '?'
+
+		case encodeUserPassword: // §3.2.2
+			// The RFC allows ; : & = + $ , in userinfo, so we must escape only @ and /.
+			// The parsing of userinfo treats : as special so we must escape that too.
+			return c == '@' || c == '/' || c == ':'
+
+		case encodeQueryComponent: // §3.4
+			// The RFC reserves (so we must escape) everything.
+			return true
+
+		case encodeEverything: // §3.4
+			// Added this option to encode everything; net/url code converts space to '+'
+			return true
+
+		case encodeFragment: // §4.1
+			// The RFC text is silent but the grammar allows everything, so escape nothing.
+			return false
+		}
+	}
+
+	// Everything else must be escaped.
+	return true
 }
