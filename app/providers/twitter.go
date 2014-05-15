@@ -28,7 +28,7 @@ func NewTwitterAuthProvider(config *AuthConfig) AuthProvider {
 type TwitterAuthProvider struct {
 }
 
-func (a *TwitterAuthProvider) MapAuthConfigToUrlValues(parent *AuthProvider) (v url.Values, err error) {
+func (a *TwitterAuthProvider) MapAuthInitatorValues(parent *AuthProvider) (v url.Values, err error) {
 
 	v = url.Values{}
 	v.Set("oauth_callback", parent.CallbackUrl)
@@ -43,7 +43,7 @@ func (a *TwitterAuthProvider) MapAuthConfigToUrlValues(parent *AuthProvider) (v 
 	return
 }
 
-func (a *TwitterAuthProvider) ConfirmAuth(parent *AuthProvider) (v url.Values, err error) {
+func (a *TwitterAuthProvider) MapExchangeValues(parent *AuthProvider) (v url.Values, err error) {
 	v = url.Values{}
 	return
 }

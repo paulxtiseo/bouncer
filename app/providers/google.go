@@ -24,19 +24,25 @@ func NewGoogleAuthProvider(config *AuthConfig) AuthProvider {
 type GoogleAuthProvider struct {
 }
 
-func (a *GoogleAuthProvider) MapAuthConfigToUrlValues(parent *AuthProvider) (v url.Values, err error) {
+func (a *GoogleAuthProvider) MapAuthInitatorValues(parent *AuthProvider) (v url.Values, err error) {
 
 	v = url.Values{}
 	v.Set("response_type", "code")
 	v.Set("client_id", parent.ConsumerKey)
 	v.Set("redirect_uri", parent.CallbackUrl)
 	v.Set("scope", parent.Permissions)
-	v.Set("state", "gfhgdfhdgfhbfnfgngfddn")
+	v.Set("state", "MapAuthConfigToUrlValues")
 	return
 
 }
 
-func (a *GoogleAuthProvider) ConfirmAuth(parent *AuthProvider) (v url.Values, err error) {
+func (a *GoogleAuthProvider) MapExchangeValues(parent *AuthProvider) (v url.Values, err error) {
+
 	v = url.Values{}
+	v.Set("client_id", parent.ConsumerKey)
+	v.Set("client_secret", parent.ConsumerSecret)
+	v.Set("redirect_uri", parent.CallbackUrl)
+	v.Set("grant_type", "authorization_code")
 	return
+
 }

@@ -24,7 +24,7 @@ func NewFacebookAuthProvider(config *AuthConfig) AuthProvider {
 type FacebookAuthProvider struct {
 }
 
-func (a *FacebookAuthProvider) MapAuthConfigToUrlValues(parent *AuthProvider) (v url.Values, err error) {
+func (a *FacebookAuthProvider) MapAuthInitatorValues(parent *AuthProvider) (v url.Values, err error) {
 
 	v = url.Values{}
 	v.Set("client_id", parent.ConsumerKey)
@@ -36,7 +36,11 @@ func (a *FacebookAuthProvider) MapAuthConfigToUrlValues(parent *AuthProvider) (v
 
 }
 
-func (a *FacebookAuthProvider) ConfirmAuth(parent *AuthProvider) (v url.Values, err error) {
+func (a *FacebookAuthProvider) MapExchangeValues(parent *AuthProvider) (v url.Values, err error) {
+
 	v = url.Values{}
+	v.Set("client_id", parent.ConsumerKey)
+	v.Set("client_secret", parent.ConsumerSecret)
+	v.Set("redirect_uri", parent.CallbackUrl)
 	return
 }

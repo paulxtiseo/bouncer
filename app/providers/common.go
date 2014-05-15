@@ -8,10 +8,14 @@ import (
 	"crypto/rand"
 	"crypto/sha1"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
-	//"github.com/revel/revel"
+	"github.com/revel/revel"
+	"io/ioutil"
+	"net/http"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -49,10 +53,13 @@ type Authorizer interface {
 
 type CommonAuthorizer interface {
 	GetAuthInitatorUrl(state *AuthState, options *RequestOptions, parent AuthProvider) (returnUrl string, err error)
+	ExchangeCodeForToken(state *AuthState, code string, parent *AuthProvider) (returnUrl string, err error)
+	// TODO: merge GetAuthInitatorUrl() and ExchangeCodeForToken() into one Autheticate() method; merge routes too
 }
 
 type SpecializedAuthorizer interface {
-	MapAuthConfigToUrlValues(parent *AuthProvider) (v url.Values, err error)
+	MapAuthInitatorValues(parent *AuthProvider) (v url.Values, err error)
+	MapExchangeValues(parent *AuthProvider) (v url.Values, err error)
 }
 
 //----- function types ----------------
@@ -63,6 +70,7 @@ type NewAuthProvider func(*AuthConfig) AuthProvider
 
 //----- private functions ----------------
 
+// create a random string of a certain size (i.e. nb of chars)
 func generateNonce(size int) string {
 	s := make([]byte, size)
 	rand.Read(s)
@@ -98,6 +106,28 @@ func calculateOAuthSig(method string, baseUrl string, params *url.Values, key st
 	enc := hmac.New(sha1.New, []byte(sign))
 	enc.Write([]byte(base))
 	return base64.StdEncoding.EncodeToString(enc.Sum(nil)), nil
+}
+
+// create and send a POST request
+func postRequestForJson(theUrl string, data string) (theJson string, err error) {
+	revel.INFO.Println(theUrl)
+	revel.INFO.Println(data)
+	client := &http.Client{}
+	req, _ := http.NewRequest("POST", theUrl, bytes.NewBufferString(data))
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Add("Content-Length", strconv.Itoa(len(data)))
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	//data := map[string]interface{}{}
+	body, _ := ioutil.ReadAll(resp.Body)
+	theJson = string(body)
+	json.Unmarshal(body, &data)
+	return
 }
 
 //----- extracted from net/url for modding; needed access to the private escape() and shouldEscape() ----------------

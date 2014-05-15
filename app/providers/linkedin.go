@@ -24,7 +24,7 @@ func NewLinkedinAuthProvider(config *AuthConfig) AuthProvider {
 type LinkedinAuthProvider struct {
 }
 
-func (a *LinkedinAuthProvider) MapAuthConfigToUrlValues(parent *AuthProvider) (v url.Values, err error) {
+func (a *LinkedinAuthProvider) MapAuthInitatorValues(parent *AuthProvider) (v url.Values, err error) {
 
 	v = url.Values{}
 	v.Set("response_type", "code")
@@ -36,7 +36,12 @@ func (a *LinkedinAuthProvider) MapAuthConfigToUrlValues(parent *AuthProvider) (v
 
 }
 
-func (a *LinkedinAuthProvider) ConfirmAuth(parent *AuthProvider) (v url.Values, err error) {
+func (a *LinkedinAuthProvider) MapExchangeValues(parent *AuthProvider) (v url.Values, err error) {
+
 	v = url.Values{}
+	v.Set("client_id", parent.ConsumerKey)
+	v.Set("client_secret", parent.ConsumerSecret)
+	v.Set("redirect_uri", parent.CallbackUrl)
+	v.Set("grant_type", "authorization_code")
 	return
 }
