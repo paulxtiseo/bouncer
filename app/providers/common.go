@@ -76,9 +76,15 @@ type AuthProvider struct {
 }
 
 type AuthResponse struct {
-	Type     string
+	Type     AuthResponseType
 	Response string
 }
+
+type AuthResponseType string
+
+const (
+	AuthResponseRedirect AuthResponseType = "redirect"
+)
 
 //----- interfaces ----------------
 

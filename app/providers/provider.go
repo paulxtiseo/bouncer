@@ -112,8 +112,8 @@ func (a *CommonAuthProvider) ExchangeCodeForToken(state *AuthState, code string,
 func (a *CommonAuthProvider) Authenticate(parent *AuthProvider, params *revel.Params) (resp AuthResponse, err error) {
 
 	// make sure we got all three params
-	if parent == nil || request == nil || session == nil {
-		err = fmt.Errorf("One or more params were nil: %v, %v, %v", parent, request, session)
+	if parent == nil || params == nil {
+		err = fmt.Errorf("One or more params were nil: %v, %v, %v", parent, params)
 		return
 	}
 
@@ -128,7 +128,7 @@ func (a *CommonAuthProvider) Authenticate(parent *AuthProvider, params *revel.Pa
 	}
 
 	// call into specialized AuthenticateBase()
-	resp, err := parent.AuthenticateBase(parent*AuthProvider, request*Request, session*Session)
+	resp, err = parent.AuthenticateBase(parent*AuthProvider, params*revel.Params)
 	if err != nil {
 		err = fmt.Errorf("Error in AuthenticateBase: %v, %v, %v", parent, request, session)
 		return

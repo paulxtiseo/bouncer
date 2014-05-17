@@ -23,13 +23,18 @@ func (c Auth) StartAuth() revel.Result {
 		generator, foundProvider := providers.AllowedProviderGenerators[requestedProvider]
 		if foundProvider {
 			provider := generator(&settings)
-			// prep and redirect to the authentication provider's AuthorizeUrl per config
-			theUrl, err := provider.GetAuthInitatorUrl(nil, nil, &provider)
+			//theUrl, err := provider.GetAuthInitatorUrl(nil, nil, &provider)
+			resp, err := provider.Authenticate(&provider, &params)
 			if err != nil {
 				revel.ERROR.Printf("Error generating the auth URL: %+v", err)
 				return c.RenderError(err)
 			} else {
-				return c.Redirect(theUrl)
+				switch resp.Type {
+				case "redirect":
+					return c.Redirect(theUrl)
+				default:
+					revel.ERROR.Printf("Unknown response type in StartAuth(): %+v", resp)
+				}
 			}
 		}
 	}
