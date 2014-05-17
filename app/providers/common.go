@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"github.com/paulxtiseo/check"
 	"github.com/revel/revel"
 	"io/ioutil"
 	"net/http"
@@ -30,6 +31,36 @@ type AuthConfig struct {
 	Permissions     string
 }
 
+var AuthConfigValidator = check.Struct{
+	"CallbackUrl": check.Composite{
+		check.NonEmpty{},
+		check.URI{},
+	},
+	"ConsumerKey": check.Composite{
+		check.NonEmpty{},
+		check.Regex{`^[a-zA-Z0-9_\.\-]+$`},
+	},
+	"ConsumerSecret": check.Composite{
+		check.NonEmpty{},
+		check.Regex{`^[a-zA-Z0-9_\.\-]+$`},
+	},
+	/*"RequestTokenUrl": check.Composite{
+		check.NonEmpty{},
+		check.URI{},
+	},*/
+	"AuthorizeUrl": check.Composite{
+		check.NonEmpty{},
+		check.URI{},
+	},
+	"AccessTokenUrl": check.Composite{
+		check.NonEmpty{},
+		check.URI{},
+	},
+	"Permissions": check.Composite{
+		check.NonEmpty{},
+	},
+}
+
 type AuthState struct {
 	KeyValues map[string]string
 }
@@ -44,6 +75,11 @@ type AuthProvider struct {
 	SpecializedAuthorizer
 }
 
+type AuthResponse struct {
+	Type     string
+	Response string
+}
+
 //----- interfaces ----------------
 
 type Authorizer interface {
@@ -54,12 +90,16 @@ type Authorizer interface {
 type CommonAuthorizer interface {
 	GetAuthInitatorUrl(state *AuthState, options *RequestOptions, parent AuthProvider) (returnUrl string, err error)
 	ExchangeCodeForToken(state *AuthState, code string, parent *AuthProvider) (returnUrl string, err error)
-	// TODO: merge GetAuthInitatorUrl() and ExchangeCodeForToken() into one Autheticate() method; merge routes too
+
+	Autheticate(parent *AuthProvider, params *revel.Params) (resp AuthResponse, err error)
+	IsAuthenticated() (check bool, err error)
 }
 
 type SpecializedAuthorizer interface {
 	MapAuthInitatorValues(parent *AuthProvider) (v url.Values, err error)
 	MapExchangeValues(parent *AuthProvider) (v url.Values, err error)
+
+	AuthenticateBase(parent *AuthProvider, params *revel.Params) (resp AuthResponse, err error)
 }
 
 //----- function types ----------------

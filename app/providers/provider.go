@@ -3,7 +3,7 @@ package providers
 import (
 	//"errors"
 	"fmt"
-	//"github.com/revel/revel"
+	"github.com/revel/revel"
 	"net/url"
 )
 
@@ -106,4 +106,38 @@ func (a *CommonAuthProvider) ExchangeCodeForToken(state *AuthState, code string,
 	theJson, err := postRequestForJson(theUrl.Scheme+"://"+theUrl.Host+theUrl.Path, valueMap.Encode())
 
 	return theJson, nil
+}
+
+// returns AuthResponse, where Response = "" means skip
+func (a *CommonAuthProvider) Authenticate(parent *AuthProvider, params *revel.Params) (resp AuthResponse, err error) {
+
+	// make sure we got all three params
+	if parent == nil || request == nil || session == nil {
+		err = fmt.Errorf("One or more params were nil: %v, %v, %v", parent, request, session)
+		return
+	}
+
+	// check if already authenticated
+	check, err := parent.IsAuthenticated()
+	if err != nil {
+		err = fmt.Errorf("Error in authenticated check: %+v", parent)
+		return
+	}
+	if check { // user already authenticated
+		return
+	}
+
+	// call into specialized AuthenticateBase()
+	resp, err := parent.AuthenticateBase(parent*AuthProvider, request*Request, session*Session)
+	if err != nil {
+		err = fmt.Errorf("Error in AuthenticateBase: %v, %v, %v", parent, request, session)
+		return
+	}
+
+	return
+}
+
+func (a *CommonAuthProvider) IsAuthenticated() (check bool, err error) {
+	// TODO: finish it!
+	return false, nil
 }

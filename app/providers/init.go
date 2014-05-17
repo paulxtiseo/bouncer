@@ -46,13 +46,18 @@ func init() {
 					revel.WARN.Printf("Provider <%s> is not known. Skipped.", providerItm)
 				}
 
-				// pull AuthConfig settings from app.conf
+				// pull AuthConfig settings from app.conf and validate it
 				ac, err := generateAuthConfigFromAppConfig(providerItm)
 				if err != nil {
 					revel.ERROR.Fatal(err)
 				} else {
-					AppAuthConfigs[providerItm] = ac
-					revel.INFO.Printf("Configured %s for authentication.", providerItm)
+					validator := AuthConfigValidator.Validate(ac)
+					if validator.HasErrors() {
+						revel.WARN.Printf("Configuration data for %s does not validate. Added anyways, but please confirm settings.", providerItm)
+					} else {
+						AppAuthConfigs[providerItm] = ac
+						revel.INFO.Printf("Configured %s for authentication.", providerItm)
+					}
 				}
 
 			}
