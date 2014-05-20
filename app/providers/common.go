@@ -83,7 +83,10 @@ type AuthResponse struct {
 type AuthResponseType string
 
 const (
+	AuthResponseError    AuthResponseType = "error"
+	AuthResponseNone     AuthResponseType = "none"
 	AuthResponseRedirect AuthResponseType = "redirect"
+	AuthResponseString   AuthResponseType = "string"
 )
 
 //----- interfaces ----------------
@@ -94,18 +97,14 @@ type Authorizer interface {
 }
 
 type CommonAuthorizer interface {
-	GetAuthInitatorUrl(state *AuthState, options *RequestOptions, parent AuthProvider) (returnUrl string, err error)
-	ExchangeCodeForToken(state *AuthState, code string, parent *AuthProvider) (returnUrl string, err error)
-
 	Autheticate(parent *AuthProvider, params *revel.Params) (resp AuthResponse, err error)
 	IsAuthenticated() (check bool, err error)
 }
 
 type SpecializedAuthorizer interface {
+	AuthenticateBase(parent *AuthProvider, params *revel.Params) (resp AuthResponse, err error)
 	MapAuthInitatorValues(parent *AuthProvider) (v url.Values, err error)
 	MapExchangeValues(parent *AuthProvider) (v url.Values, err error)
-
-	AuthenticateBase(parent *AuthProvider, params *revel.Params) (resp AuthResponse, err error)
 }
 
 //----- function types ----------------
@@ -156,8 +155,7 @@ func calculateOAuthSig(method string, baseUrl string, params *url.Values, key st
 
 // create and send a POST request
 func postRequestForJson(theUrl string, data string) (theJson string, err error) {
-	revel.INFO.Println(theUrl)
-	revel.INFO.Println(data)
+
 	client := &http.Client{}
 	req, _ := http.NewRequest("POST", theUrl, bytes.NewBufferString(data))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
@@ -169,7 +167,7 @@ func postRequestForJson(theUrl string, data string) (theJson string, err error) 
 	}
 	defer resp.Body.Close()
 
-	//data := map[string]interface{}{}
+	// TODO: data := map[string]interface{}{}
 	body, _ := ioutil.ReadAll(resp.Body)
 	theJson = string(body)
 	json.Unmarshal(body, &data)
