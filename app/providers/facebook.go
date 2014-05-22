@@ -28,7 +28,6 @@ type FacebookAuthProvider struct {
 
 func (a *FacebookAuthProvider) AuthenticateBase(parent *AuthProvider, params *revel.Params) (resp AuthResponse, err error) {
 	// assumption: validation has previously been done revel.OnAppStart() and then in in Authenticate()
-
 	errorCode := params.Get("error_code")
 	if errorCode != "" {
 		resp = AuthResponse{Type: AuthResponseError, Response: params.Get("error_message")}
@@ -52,8 +51,6 @@ func (a *FacebookAuthProvider) AuthenticateBase(parent *AuthProvider, params *re
 
 		// create a map of all necessary params to pass to authenticator
 		valueMap, _ := parent.MapExchangeValues(parent)
-
-		// add passed in code
 		valueMap.Add("code", code)
 
 		// push the whole valueMap into the URL instance
@@ -61,15 +58,15 @@ func (a *FacebookAuthProvider) AuthenticateBase(parent *AuthProvider, params *re
 
 		// do the POST, then post
 		theJson, err := postRequestForJson(theUrl.Scheme+"://"+theUrl.Host+theUrl.Path, valueMap.Encode())
-		if err != nil {
+		if err == nil {
 			resp = AuthResponse{Type: AuthResponseString, Response: theJson}
 			return resp, err
 		} else {
-			resp = AuthResponse{Type: AuthResponseError, Response: theJson}
+			resp = AuthResponse{Type: AuthResponseError, Response: err.Error()}
 			return resp, err
 		}
-
 	}
+
 }
 
 func (a *FacebookAuthProvider) MapAuthInitatorValues(parent *AuthProvider) (v url.Values, err error) {

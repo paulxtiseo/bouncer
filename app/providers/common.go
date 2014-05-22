@@ -8,7 +8,7 @@ import (
 	"crypto/rand"
 	"crypto/sha1"
 	"encoding/base64"
-	"encoding/json"
+	//"encoding/json"
 	"errors"
 	"github.com/paulxtiseo/check"
 	"github.com/revel/revel"
@@ -156,6 +156,9 @@ func calculateOAuthSig(method string, baseUrl string, params *url.Values, key st
 // create and send a POST request
 func postRequestForJson(theUrl string, data string) (theJson string, err error) {
 
+	//revel.INFO.Printf("postRequestForJson() theUrl: %s\n\n", theUrl)
+	//revel.INFO.Printf("postRequestForJson() data: %s\n\n", data)
+
 	client := &http.Client{}
 	req, _ := http.NewRequest("POST", theUrl, bytes.NewBufferString(data))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
@@ -166,11 +169,17 @@ func postRequestForJson(theUrl string, data string) (theJson string, err error) 
 		return
 	}
 	defer resp.Body.Close()
-
-	// TODO: data := map[string]interface{}{}
 	body, _ := ioutil.ReadAll(resp.Body)
-	theJson = string(body)
-	json.Unmarshal(body, &data)
+
+	switch resp.StatusCode {
+	case 200:
+		// TODO: data := map[string]interface{}{}
+		//json.Unmarshal(body, &data)
+		theJson = string(body)
+	default:
+		revel.ERROR.Printf("postRequestForJson() body: %s\n\n", body)
+		err = errors.New("No OK response. Received a: " + resp.Status)
+	}
 	return
 }
 

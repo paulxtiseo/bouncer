@@ -12,7 +12,7 @@ func NewGoogleAuthProvider(config *AuthConfig) AuthProvider {
 
 	p := new(AuthProvider)
 	p.AuthConfig = *config
-	p.Name = "Facebook"
+	p.Name = "Google"
 
 	c := new(CommonAuthProvider)
 	p.CommonAuthProvider = *c
@@ -28,6 +28,12 @@ type GoogleAuthProvider struct {
 
 func (a *GoogleAuthProvider) AuthenticateBase(parent *AuthProvider, params *revel.Params) (resp AuthResponse, err error) {
 	// assumption: validation has previously been done revel.OnAppStart() and then in in Authenticate()
+	errorCode := params.Get("error")
+	if errorCode != "" {
+		resp = AuthResponse{Type: AuthResponseError, Response: params.Get("error_message")}
+		return resp, err
+	}
+
 	code := params.Get("code")
 	if code == "" {
 		// we have no token, so begin authorization
@@ -45,8 +51,6 @@ func (a *GoogleAuthProvider) AuthenticateBase(parent *AuthProvider, params *reve
 
 		// create a map of all necessary params to pass to authenticator
 		valueMap, _ := parent.MapExchangeValues(parent)
-
-		// add passed in code
 		valueMap.Add("code", code)
 
 		// push the whole valueMap into the URL instance
@@ -54,14 +58,13 @@ func (a *GoogleAuthProvider) AuthenticateBase(parent *AuthProvider, params *reve
 
 		// do the POST, then post
 		theJson, err := postRequestForJson(theUrl.Scheme+"://"+theUrl.Host+theUrl.Path, valueMap.Encode())
-		if err != nil {
+		if err == nil {
 			resp = AuthResponse{Type: AuthResponseString, Response: theJson}
 			return resp, err
 		} else {
-			resp = AuthResponse{Type: AuthResponseError, Response: theJson}
+			resp = AuthResponse{Type: AuthResponseError, Response: err.Error()}
 			return resp, err
 		}
-
 	}
 }
 

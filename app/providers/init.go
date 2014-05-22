@@ -30,7 +30,7 @@ func init() {
 			configResults := strings.Split(configItm, ",")
 
 			for idx := 0; idx < len(configResults); idx++ {
-				providerItm := strings.ToLower(configResults[idx])
+				providerItm := strings.Trim(strings.ToLower(configResults[idx]), " ")
 
 				// set the AuthProvider for each type requested
 				switch providerItm {
@@ -55,9 +55,9 @@ func init() {
 					if validator.HasErrors() {
 						revel.WARN.Printf("Configuration data for %s does not validate. Added anyways, but please confirm settings.", providerItm)
 					} else {
-						AppAuthConfigs[providerItm] = ac
 						revel.INFO.Printf("Configured %s for authentication.", providerItm)
 					}
+					AppAuthConfigs[providerItm] = ac
 				}
 
 			}

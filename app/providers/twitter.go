@@ -2,6 +2,7 @@ package providers
 
 import (
 	//"fmt"
+	//"errors"
 	"github.com/revel/revel"
 	"net/url"
 	"strconv"
@@ -15,7 +16,7 @@ func NewTwitterAuthProvider(config *AuthConfig) AuthProvider {
 
 	p := new(AuthProvider)
 	p.AuthConfig = *config
-	p.Name = "Facebook"
+	p.Name = "Twitter"
 
 	c := new(CommonAuthProvider)
 	p.CommonAuthProvider = *c
@@ -31,40 +32,69 @@ type TwitterAuthProvider struct {
 
 func (a *TwitterAuthProvider) AuthenticateBase(parent *AuthProvider, params *revel.Params) (resp AuthResponse, err error) {
 	// assumption: validation has previously been done revel.OnAppStart() and then in in Authenticate()
-	code := params.Get("code")
-	if code == "" {
-		// we have no token, so begin authorization
-		theUrl, _ := url.ParseRequestURI(parent.AuthConfig.AuthorizeUrl)
+	errorCode := params.Get("error_code")
+	if errorCode != "" {
+		resp = AuthResponse{Type: AuthResponseError, Response: params.Get("error_message")}
+		return resp, err
+	}
 
+	token := params.Get("oauth_token")
+	verifier := params.Get("oauth_verifier")
+
+	if token == "" && verifier == "" { // Step 1: obtain a request token and redirect user
+		theUrl, _ := url.ParseRequestURI(parent.AuthConfig.RequestTokenUrl)
 		// create a Map of all necessary params to pass to authenticator
 		valueMap, _ := parent.MapAuthInitatorValues(parent)
-
 		theUrl.RawQuery = valueMap.Encode()
-		resp = AuthResponse{Type: AuthResponseRedirect, Response: theUrl.String()}
+
+		// do the POST to get the oauth_token
+		theJson, err := postRequestForJson(theUrl.Scheme+"://"+theUrl.Host+theUrl.Path, valueMap.Encode())
+		if err != nil {
+			resp = AuthResponse{Type: AuthResponseError, Response: err.Error()}
+			return resp, err
+		}
+
+		// extract oauth_token out of theJson (which is not JSON, but rather a querystring)
+		vals, err := url.ParseQuery(theJson)
+		if err != nil {
+			resp = AuthResponse{Type: AuthResponseError, Response: err.Error()}
+			return resp, err
+		}
+
+		token := vals.Get("oauth_token")
+		if token == "" {
+			resp = AuthResponse{Type: AuthResponseError, Response: "No oauth token found in token request to Twitter."}
+			return resp, err
+		}
+
+		// redirect user to authenticate
+		redirectUrl, _ := url.ParseRequestURI(parent.AuthConfig.AuthorizeUrl)
+		v := url.Values{}
+		v.Set("oauth_token", token)
+		redirectUrl.RawQuery = valueMap.Encode()
+		resp = AuthResponse{Type: AuthResponseRedirect, Response: redirectUrl.String()}
 		return resp, err
 	} else {
-		// we have a code, so it's exchange time!
+		// we have a token and verifier, so it's exchange time!
 		theUrl, _ := url.ParseRequestURI(parent.AuthConfig.AccessTokenUrl)
 
 		// create a map of all necessary params to pass to authenticator
 		valueMap, _ := parent.MapExchangeValues(parent)
-
-		// add passed in code
-		valueMap.Add("code", code)
+		valueMap.Add("oauth_token", token)
+		valueMap.Add("oauth_verifier", verifier)
 
 		// push the whole valueMap into the URL instance
 		theUrl.RawQuery = valueMap.Encode()
 
 		// do the POST, then post
 		theJson, err := postRequestForJson(theUrl.Scheme+"://"+theUrl.Host+theUrl.Path, valueMap.Encode())
-		if err != nil {
+		if err == nil {
 			resp = AuthResponse{Type: AuthResponseString, Response: theJson}
 			return resp, err
 		} else {
-			resp = AuthResponse{Type: AuthResponseError, Response: theJson}
+			resp = AuthResponse{Type: AuthResponseError, Response: err.Error()}
 			return resp, err
 		}
-
 	}
 }
 
