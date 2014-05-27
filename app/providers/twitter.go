@@ -71,15 +71,17 @@ func (a *TwitterAuthProvider) AuthenticateBase(parent *AuthProvider, params *rev
 		redirectUrl, _ := url.ParseRequestURI(parent.AuthConfig.AuthorizeUrl)
 		v := url.Values{}
 		v.Set("oauth_token", token)
-		redirectUrl.RawQuery = valueMap.Encode()
+		redirectUrl.RawQuery = v.Encode()
 		resp = AuthResponse{Type: AuthResponseRedirect, Response: redirectUrl.String()}
 		return resp, err
+
 	} else {
 		// we have a token and verifier, so it's exchange time!
 		theUrl, _ := url.ParseRequestURI(parent.AuthConfig.AccessTokenUrl)
 
 		// create a map of all necessary params to pass to authenticator
-		valueMap, _ := parent.MapExchangeValues(parent)
+		//valueMap, _ := parent.MapExchangeValues(parent)
+		valueMap := url.Values{}
 		valueMap.Add("oauth_token", token)
 		valueMap.Add("oauth_verifier", verifier)
 
@@ -108,7 +110,7 @@ func (a *TwitterAuthProvider) MapAuthInitatorValues(parent *AuthProvider) (v url
 	v.Set("oauth_timestamp", strconv.FormatInt(time.Now().Unix(), 10))
 	v.Set("oauth_version", "1.0")
 	// calculate signature
-	msg, _ := calculateOAuthSig("GET", parent.AuthorizeUrl, &v, parent.ConsumerSecret, "")
+	msg, _ := calculateOAuthSig("POST", parent.RequestTokenUrl, &v, parent.ConsumerSecret, "")
 	v.Set("oauth_signature", msg)
 	return
 }
