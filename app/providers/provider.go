@@ -4,46 +4,42 @@ import (
 	//"errors"
 	"fmt"
 	"github.com/revel/revel"
-	"net/url"
+	//"net/url"
 )
 
-// GetAuthInitatorUrl generates the URL that begins the auth process with any common provider.
-// At a minimum, the process requires:
-// 	- an authorization URL, set in AuthCofig.AuthorizeUrl before invoking this method
-// 	- the app's id with the authorizer, set in AuthConfig.ConsumerKey
-// 	- a callback URL, set in AuthConfig.CallbackUrl
-func (a *AuthProvider) GetAuthInitatorUrl(state *AuthState, options *RequestOptions) (returnUrl string, err error) {
+type CommonAuthProvider struct {
+}
 
-	// validate key items to generate auth URL
-	if a.AuthConfig.AuthorizeUrl == "" || a.AuthConfig.CallbackUrl == "" || a.AuthConfig.ConsumerKey == "" {
-		err = fmt.Errorf("Missing required config info in GetAuthInitatorUrl: {AuthorizeUrl: %s, CallbackUrl: %s, ConsumerKey: %s}", a.AuthConfig.AuthorizeUrl, a.AuthConfig.CallbackUrl, a.AuthConfig.ConsumerKey)
-		return
+// returns AuthResponse, where Response = "" means skip
+func (a *CommonAuthProvider) Authenticate(parent *AuthProvider, params *revel.Params) (resp AuthResponse, err error) {
+
+	// make sure we got all params
+	if parent == nil || params == nil {
+		err = fmt.Errorf("One or more params were nil: %v, %v", parent, params)
+		return resp, err
 	}
 
-	theUrl, parseErr := url.ParseRequestURI(a.AuthConfig.AuthorizeUrl)
-	if parseErr != nil {
-		err = fmt.Errorf("Bad URL in AuthorizeUrl: %s", a.AuthConfig.AuthorizeUrl)
-		return
+	// check if already authenticated
+	check, err := parent.IsAuthenticated()
+	if err != nil {
+		err = fmt.Errorf("Error in authenticated check: %+v", parent)
+		return resp, err
+	}
+	if check { // user already authenticated
+		return resp, err
 	}
 
-	// TODO: validate state and options
-
-	// create a Map of all necessary params to pass to authenticator
-	revel.INFO.Print("Calling MapAuthConfigToStartAuthMap")
-	valueMap := a.MapAuthConfigToStartAuthMap()
-	revel.INFO.Printf("GetAuthInitatorUrl: %+v", valueMap)
-	// convert state and add as a RequestOption
-	if state != nil {
-		//options["state"] = query.Values(state).Encode() // TODO: convert to JSON string?
+	// call into specialized AuthenticateBase()
+	resp, err = parent.AuthenticateBase(parent, params)
+	if err != nil {
+		err = fmt.Errorf("Error in AuthenticateBase: %v, %v", parent, params)
+		return resp, err
 	}
 
-	// convert options into a QueryString
-	if options != nil {
-		//queryString, queryErr := query.Values(options)
-		//if queryErr != nil {
-		//	return "", queryErr
-		//}
-	}
+	return resp, err
+}
 
-	return theUrl.String(), nil
+func (a *CommonAuthProvider) IsAuthenticated() (check bool, err error) {
+	// TODO: finish it!
+	return false, nil
 }

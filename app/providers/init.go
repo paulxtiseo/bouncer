@@ -9,10 +9,18 @@ import (
 
 var AllowedProviderGenerators = make(map[string]NewAuthProvider)
 var AppAuthConfigs = make(map[string]AuthConfig)
+var SecurityKey string
 
 func init() {
 
 	revel.OnAppStart(func() {
+
+		// set security key to app.secret
+		sec, found := revel.Config.String("app.secret")
+		if !found {
+			revel.ERROR.Fatal("No app.secret setting was found in app.conf.")
+		}
+		SecurityKey = sec
 
 		// setup providers allowed in app.config's auth.providersallowed setting
 		configItm, found := revel.Config.String("auth.providersallowed")
@@ -22,7 +30,7 @@ func init() {
 			configResults := strings.Split(configItm, ",")
 
 			for idx := 0; idx < len(configResults); idx++ {
-				providerItm := strings.ToLower(configResults[idx])
+				providerItm := strings.Trim(strings.ToLower(configResults[idx]), " ")
 
 				// set the AuthProvider for each type requested
 				switch providerItm {
@@ -38,13 +46,18 @@ func init() {
 					revel.WARN.Printf("Provider <%s> is not known. Skipped.", providerItm)
 				}
 
-				// pull AuthConfig settings from app.conf
+				// pull AuthConfig settings from app.conf and validate it
 				ac, err := generateAuthConfigFromAppConfig(providerItm)
 				if err != nil {
 					revel.ERROR.Fatal(err)
 				} else {
+					validator := AuthConfigValidator.Validate(ac)
+					if validator.HasErrors() {
+						revel.WARN.Printf("Configuration data for %s does not validate. Added anyways, but please confirm settings.", providerItm)
+					} else {
+						revel.INFO.Printf("Configured %s for authentication.", providerItm)
+					}
 					AppAuthConfigs[providerItm] = ac
-					revel.INFO.Printf("Configured %s for authentication.", providerItm)
 				}
 
 			}
