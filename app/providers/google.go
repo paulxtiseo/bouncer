@@ -50,8 +50,7 @@ func (a *GoogleAuthProvider) AuthenticateBase(parent *AuthProvider, params *reve
 		theUrl, _ := url.ParseRequestURI(parent.AuthConfig.AccessTokenUrl)
 
 		// create a map of all necessary params to pass to authenticator
-		valueMap, _ := parent.MapExchangeValues(parent)
-		valueMap.Add("code", code)
+		valueMap, _ := parent.MapExchangeValues(parent, code, "")
 
 		// push the whole valueMap into the URL instance
 		theUrl.RawQuery = valueMap.Encode()
@@ -79,11 +78,12 @@ func (a *GoogleAuthProvider) MapAuthInitatorValues(parent *AuthProvider) (v url.
 
 }
 
-func (a *GoogleAuthProvider) MapExchangeValues(parent *AuthProvider) (v url.Values, err error) {
+func (a *GoogleAuthProvider) MapExchangeValues(parent *AuthProvider, token string, verifier string) (v url.Values, err error) {
 
 	v = url.Values{}
 	v.Set("client_id", parent.ConsumerKey)
 	v.Set("client_secret", parent.ConsumerSecret)
+	v.Set("code", token)
 	v.Set("redirect_uri", parent.CallbackUrl)
 	v.Set("grant_type", "authorization_code")
 	return

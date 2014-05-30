@@ -87,6 +87,7 @@ const (
 	AuthResponseNone     AuthResponseType = "none"
 	AuthResponseRedirect AuthResponseType = "redirect"
 	AuthResponseString   AuthResponseType = "string"
+	AuthResponseToken    AuthResponseType = "token"
 )
 
 //----- interfaces ----------------
@@ -104,7 +105,7 @@ type CommonAuthorizer interface {
 type SpecializedAuthorizer interface {
 	AuthenticateBase(parent *AuthProvider, params *revel.Params) (resp AuthResponse, err error)
 	MapAuthInitatorValues(parent *AuthProvider) (v url.Values, err error)
-	MapExchangeValues(parent *AuthProvider) (v url.Values, err error)
+	MapExchangeValues(parent *AuthProvider, token string, verifier string) (v url.Values, err error)
 }
 
 //----- function types ----------------
@@ -174,7 +175,7 @@ func postRequestForJson(theUrl string, data string) (theJson string, err error) 
 	switch resp.StatusCode {
 	case 200:
 		// TODO: data := map[string]interface{}{}
-		//json.Unmarshal(body, &data)
+		//       json.Unmarshal(body, &data)
 		theJson = string(body)
 	default:
 		revel.ERROR.Printf("postRequestForJson() body: %s\n\n", body)

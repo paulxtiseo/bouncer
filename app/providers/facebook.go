@@ -4,6 +4,7 @@ import (
 	//"fmt"
 	"github.com/revel/revel"
 	"net/url"
+	"regexp"
 )
 
 // -- generator function ----
@@ -50,21 +51,36 @@ func (a *FacebookAuthProvider) AuthenticateBase(parent *AuthProvider, params *re
 		theUrl, _ := url.ParseRequestURI(parent.AuthConfig.AccessTokenUrl)
 
 		// create a map of all necessary params to pass to authenticator
-		valueMap, _ := parent.MapExchangeValues(parent)
-		valueMap.Add("code", code)
+		valueMap, _ := parent.MapExchangeValues(parent, code, "")
 
 		// push the whole valueMap into the URL instance
 		theUrl.RawQuery = valueMap.Encode()
 
 		// do the POST, then post
 		theJson, err := postRequestForJson(theUrl.Scheme+"://"+theUrl.Host+theUrl.Path, valueMap.Encode())
-		if err == nil {
-			resp = AuthResponse{Type: AuthResponseString, Response: theJson}
-			return resp, err
-		} else {
+		if err != nil {
 			resp = AuthResponse{Type: AuthResponseError, Response: err.Error()}
 			return resp, err
 		}
+
+		// parse response and return an expected JSON string
+		tokenRe := regexp.MustCompile(`access_token=([^&])+`)
+		tokens := tokenRe.FindStringSubmatch(theJson)
+		if tokens == nil {
+			resp = AuthResponse{Type: AuthResponseError, Response: "No access token found in FacebookAuthProvider"}
+			return resp, err
+		}
+		token := tokens[0]
+		expiresRe := regexp.MustCompile(`expires=([^&])+`)
+		expires := expiresRe.FindStringSubmatch(theJson)
+		if tokens == nil {
+			resp = AuthResponse{Type: AuthResponseError, Response: "No access token found in FacebookAuthProvider"}
+			return resp, err
+		}
+		expire := tokens[0]
+		resp = AuthResponse{Type: AuthResponseToken, Response: `{"token":"", "expires":}`}
+		return resp, err
+
 	}
 
 }
@@ -80,11 +96,12 @@ func (a *FacebookAuthProvider) MapAuthInitatorValues(parent *AuthProvider) (v ur
 
 }
 
-func (a *FacebookAuthProvider) MapExchangeValues(parent *AuthProvider) (v url.Values, err error) {
+func (a *FacebookAuthProvider) MapExchangeValues(parent *AuthProvider, token string, verifier string) (v url.Values, err error) {
 
 	v = url.Values{}
 	v.Set("client_id", parent.ConsumerKey)
 	v.Set("client_secret", parent.ConsumerSecret)
+	v.Set("code", token)
 	v.Set("redirect_uri", parent.CallbackUrl)
 	return
 }

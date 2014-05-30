@@ -80,10 +80,7 @@ func (a *TwitterAuthProvider) AuthenticateBase(parent *AuthProvider, params *rev
 		theUrl, _ := url.ParseRequestURI(parent.AuthConfig.AccessTokenUrl)
 
 		// create a map of all necessary params to pass to authenticator
-		//valueMap, _ := parent.MapExchangeValues(parent)
-		valueMap := url.Values{}
-		valueMap.Add("oauth_token", token)
-		valueMap.Add("oauth_verifier", verifier)
+		valueMap, _ := parent.MapExchangeValues(parent, token, verifier)
 
 		// push the whole valueMap into the URL instance
 		theUrl.RawQuery = valueMap.Encode()
@@ -115,7 +112,17 @@ func (a *TwitterAuthProvider) MapAuthInitatorValues(parent *AuthProvider) (v url
 	return
 }
 
-func (a *TwitterAuthProvider) MapExchangeValues(parent *AuthProvider) (v url.Values, err error) {
+func (a *TwitterAuthProvider) MapExchangeValues(parent *AuthProvider, token string, verifier string) (v url.Values, err error) {
 	v = url.Values{}
+	v.Set("oauth_consumer_key", parent.ConsumerKey)
+	v.Set("oauth_nonce", generateNonce(32))
+	v.Set("oauth_signature_method", "HMAC-SHA1")
+	v.Set("oauth_timestamp", strconv.FormatInt(time.Now().Unix(), 10))
+	v.Set("oauth_token", token)
+	v.Set("oauth_version", "1.0")
+	v.Set("oauth_verifier", verifier)
+	// calculate signature
+	msg, _ := calculateOAuthSig("POST", parent.AuthConfig.AccessTokenUrl, &v, parent.ConsumerSecret, "")
+	v.Set("oauth_signature", msg)
 	return
 }

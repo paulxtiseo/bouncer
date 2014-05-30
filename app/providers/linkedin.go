@@ -51,8 +51,7 @@ func (a *LinkedinAuthProvider) AuthenticateBase(parent *AuthProvider, params *re
 		theUrl, _ := url.ParseRequestURI(parent.AuthConfig.AccessTokenUrl)
 
 		// create a map of all necessary params to pass to authenticator
-		valueMap, _ := parent.MapExchangeValues(parent)
-		valueMap.Add("code", code)
+		valueMap, _ := parent.MapExchangeValues(parent, code, "")
 		valueMap.Add("state", "blahblahblah")
 
 		// push the whole valueMap into the URL instance
@@ -81,11 +80,12 @@ func (a *LinkedinAuthProvider) MapAuthInitatorValues(parent *AuthProvider) (v ur
 
 }
 
-func (a *LinkedinAuthProvider) MapExchangeValues(parent *AuthProvider) (v url.Values, err error) {
+func (a *LinkedinAuthProvider) MapExchangeValues(parent *AuthProvider, token string, verifier string) (v url.Values, err error) {
 
 	v = url.Values{}
 	v.Set("client_id", parent.ConsumerKey)
 	v.Set("client_secret", parent.ConsumerSecret)
+	v.Set("code", token)
 	v.Set("redirect_uri", parent.CallbackUrl)
 	v.Set("grant_type", "authorization_code")
 	return
