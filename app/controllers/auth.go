@@ -38,6 +38,8 @@ func (c Auth) Authenticate() revel.Result {
 					return c.Redirect(resp.Response)
 				case providers.AuthResponseString:
 					return c.RenderText(resp.Response)
+				case providers.AuthResponseToken:
+					return c.RenderText(resp.Response) // TODO: add to session; store token in db
 				default:
 					revel.ERROR.Printf("Unknown response type in Authenticate(): %+v\n\n", resp)
 					return c.RenderError(errors.New(resp.Response)) // TODO: Do not output system errors

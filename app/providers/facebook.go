@@ -63,22 +63,24 @@ func (a *FacebookAuthProvider) AuthenticateBase(parent *AuthProvider, params *re
 			return resp, err
 		}
 
-		// parse response and return an expected JSON string
-		tokenRe := regexp.MustCompile(`access_token=([^&])+`)
+		// parse response and return a standard JSON string; Facebook response is form-urlencoded
+		tokenRe := regexp.MustCompile(`access_token=([^&]+)`)
 		tokens := tokenRe.FindStringSubmatch(theJson)
-		if tokens == nil {
-			resp = AuthResponse{Type: AuthResponseError, Response: "No access token found in FacebookAuthProvider"}
+		if len(tokens) != 2 {
+			resp = AuthResponse{Type: AuthResponseError, Response: "Bad match on access token in FacebookAuthProvider"}
 			return resp, err
 		}
-		token := tokens[0]
-		expiresRe := regexp.MustCompile(`expires=([^&])+`)
+		token := tokens[1]
+
+		expiresRe := regexp.MustCompile(`expires=([^&]+)`)
 		expires := expiresRe.FindStringSubmatch(theJson)
-		if tokens == nil {
-			resp = AuthResponse{Type: AuthResponseError, Response: "No access token found in FacebookAuthProvider"}
+		if len(expires) != 2 {
+			resp = AuthResponse{Type: AuthResponseError, Response: "Bad match on expires in FacebookAuthProvider"}
 			return resp, err
 		}
-		expire := tokens[0]
-		resp = AuthResponse{Type: AuthResponseToken, Response: `{"token":"", "expires":}`}
+		expire := expires[1]
+
+		resp = AuthResponse{Type: AuthResponseToken, Response: `{"token":"` + token + `", "expires":` + expire + `}`}
 		return resp, err
 
 	}

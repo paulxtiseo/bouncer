@@ -57,13 +57,30 @@ func (a *GoogleAuthProvider) AuthenticateBase(parent *AuthProvider, params *reve
 
 		// do the POST, then post
 		theJson, err := postRequestForJson(theUrl.Scheme+"://"+theUrl.Host+theUrl.Path, valueMap.Encode())
-		if err == nil {
-			resp = AuthResponse{Type: AuthResponseString, Response: theJson}
-			return resp, err
-		} else {
+		if err != nil {
 			resp = AuthResponse{Type: AuthResponseError, Response: err.Error()}
 			return resp, err
 		}
+
+		// parse response and return an expected JSON string; Google response is in JSON format
+		tokenRe := regexp.MustCompile(`access_token=([^&]+)`)
+		tokens := tokenRe.FindStringSubmatch(theJson)
+		if len(tokens) != 2 {
+			resp = AuthResponse{Type: AuthResponseError, Response: "Bad match on access token in FacebookAuthProvider"}
+			return resp, err
+		}
+		token := tokens[1]
+
+		expiresRe := regexp.MustCompile(`expires=([^&]+)`)
+		expires := expiresRe.FindStringSubmatch(theJson)
+		if len(expires) != 2 {
+			resp = AuthResponse{Type: AuthResponseError, Response: "Bad match on expires in FacebookAuthProvider"}
+			return resp, err
+		}
+		expire := expires[1]
+
+		resp = AuthResponse{Type: AuthResponseToken, Response: `{"token":"` + token + `", "expires":` + expire + `}`}
+		return resp, err
 	}
 }
 
