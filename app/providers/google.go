@@ -57,24 +57,26 @@ func (a *GoogleAuthProvider) AuthenticateBase(parent *AuthProvider, params *reve
 		theUrl.RawQuery = valueMap.Encode()
 
 		// do the POST, then post
-		theJson, err := postRequestForJson(theUrl.Scheme+"://"+theUrl.Host+theUrl.Path, valueMap.Encode())
+		reply, err := postRequestForJson(theUrl.Scheme+"://"+theUrl.Host+theUrl.Path, valueMap.Encode())
 		if err != nil {
 			resp = AuthResponse{Type: AuthResponseError, Response: err.Error()}
 			return resp, err
 		}
 
 		// parse response and return an expected JSON string; Google response is in JSON format
-		tokenRe := regexp.MustCompile(`"access_token":"([^&]+)"`)
-		tokens := tokenRe.FindStringSubmatch(theJson)
+		tokenRe := regexp.MustCompile(`"access_token"\s*:\s*"([\S]+)"`)
+		tokens := tokenRe.FindStringSubmatch(reply)
 		if len(tokens) != 2 {
+			revel.ERROR.Printf("GoogleAuthProvider failed access_token match: %s\n\n", reply)
 			resp = AuthResponse{Type: AuthResponseError, Response: "Bad match on access token in GoogleAuthProvider"}
 			return resp, err
 		}
 		token := tokens[1]
 
-		expiresRe := regexp.MustCompile(`"expires_in":([^&]+)`)
-		expires := expiresRe.FindStringSubmatch(theJson)
+		expiresRe := regexp.MustCompile(`"expires_in"\s*:\s*(\d+)`)
+		expires := expiresRe.FindStringSubmatch(reply)
 		if len(expires) != 2 {
+			revel.ERROR.Printf("GoogleAuthProvider failed expires_in match: %s\n\n", reply)
 			resp = AuthResponse{Type: AuthResponseError, Response: "Bad match on expires in GoogleAuthProvider"}
 			return resp, err
 		}

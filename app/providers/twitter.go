@@ -87,7 +87,7 @@ func (a *TwitterAuthProvider) AuthenticateBase(parent *AuthProvider, params *rev
 		theUrl.RawQuery = valueMap.Encode()
 
 		// do the POST, then post
-		theJson, err := postRequestForJson(theUrl.Scheme+"://"+theUrl.Host+theUrl.Path, valueMap.Encode())
+		reply, err := postRequestForJson(theUrl.Scheme+"://"+theUrl.Host+theUrl.Path, valueMap.Encode())
 		if err != nil {
 			resp = AuthResponse{Type: AuthResponseError, Response: err.Error()}
 			return resp, err
@@ -95,8 +95,9 @@ func (a *TwitterAuthProvider) AuthenticateBase(parent *AuthProvider, params *rev
 
 		// parse response and return an expected JSON string; linkedin response is in JSONish format
 		tokenRe := regexp.MustCompile(`oauth_token=([^&]+)`)
-		tokens := tokenRe.FindStringSubmatch(theJson)
+		tokens := tokenRe.FindStringSubmatch(reply)
 		if len(tokens) != 2 {
+			revel.ERROR.Printf("TwitterAuthProvider failed oauth_token match: %s\n\n", reply)
 			resp = AuthResponse{Type: AuthResponseError, Response: "Bad match on access token in TwitterAuthProvider"}
 			return resp, err
 		}

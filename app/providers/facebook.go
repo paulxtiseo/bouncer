@@ -57,7 +57,7 @@ func (a *FacebookAuthProvider) AuthenticateBase(parent *AuthProvider, params *re
 		theUrl.RawQuery = valueMap.Encode()
 
 		// do the POST, then post
-		theJson, err := postRequestForJson(theUrl.Scheme+"://"+theUrl.Host+theUrl.Path, valueMap.Encode())
+		reply, err := postRequestForJson(theUrl.Scheme+"://"+theUrl.Host+theUrl.Path, valueMap.Encode())
 		if err != nil {
 			resp = AuthResponse{Type: AuthResponseError, Response: err.Error()}
 			return resp, err
@@ -65,16 +65,18 @@ func (a *FacebookAuthProvider) AuthenticateBase(parent *AuthProvider, params *re
 
 		// parse response and return a standard JSON string; Facebook response is form-urlencoded
 		tokenRe := regexp.MustCompile(`access_token=([^&]+)`)
-		tokens := tokenRe.FindStringSubmatch(theJson)
+		tokens := tokenRe.FindStringSubmatch(reply)
 		if len(tokens) != 2 {
+			revel.ERROR.Printf("FacebookAuthProvider failed access_token match: %s\n\n", reply)
 			resp = AuthResponse{Type: AuthResponseError, Response: "Bad match on access token in FacebookAuthProvider"}
 			return resp, err
 		}
 		token := tokens[1]
 
 		expiresRe := regexp.MustCompile(`expires=([^&]+)`)
-		expires := expiresRe.FindStringSubmatch(theJson)
+		expires := expiresRe.FindStringSubmatch(reply)
 		if len(expires) != 2 {
+			revel.ERROR.Printf("FacebookAuthProvider failed expires match: %s\n\n", reply)
 			resp = AuthResponse{Type: AuthResponseError, Response: "Bad match on expires in FacebookAuthProvider"}
 			return resp, err
 		}

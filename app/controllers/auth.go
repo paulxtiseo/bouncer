@@ -28,7 +28,7 @@ func (c Auth) Authenticate() revel.Result {
 			//revel.INFO.Printf("Authenticate() resp: %+v\n\n", resp)
 			if err != nil {
 				revel.ERROR.Printf("Error generating the auth URL: %+v\n", err)
-				return c.RenderError(err) // TODO: Do not output system errors
+				return c.RenderError(errors.New(resp.Response)) // TODO: Do not output system errors
 			} else {
 				switch resp.Type {
 				case providers.AuthResponseError:
