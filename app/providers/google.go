@@ -4,6 +4,7 @@ import (
 	//"fmt"
 	"github.com/revel/revel"
 	"net/url"
+	"regexp"
 )
 
 // -- generator function ----
@@ -63,18 +64,18 @@ func (a *GoogleAuthProvider) AuthenticateBase(parent *AuthProvider, params *reve
 		}
 
 		// parse response and return an expected JSON string; Google response is in JSON format
-		tokenRe := regexp.MustCompile(`access_token=([^&]+)`)
+		tokenRe := regexp.MustCompile(`"access_token":"([^&]+)"`)
 		tokens := tokenRe.FindStringSubmatch(theJson)
 		if len(tokens) != 2 {
-			resp = AuthResponse{Type: AuthResponseError, Response: "Bad match on access token in FacebookAuthProvider"}
+			resp = AuthResponse{Type: AuthResponseError, Response: "Bad match on access token in GoogleAuthProvider"}
 			return resp, err
 		}
 		token := tokens[1]
 
-		expiresRe := regexp.MustCompile(`expires=([^&]+)`)
+		expiresRe := regexp.MustCompile(`"expires_in":([^&]+)`)
 		expires := expiresRe.FindStringSubmatch(theJson)
 		if len(expires) != 2 {
-			resp = AuthResponse{Type: AuthResponseError, Response: "Bad match on expires in FacebookAuthProvider"}
+			resp = AuthResponse{Type: AuthResponseError, Response: "Bad match on expires in GoogleAuthProvider"}
 			return resp, err
 		}
 		expire := expires[1]

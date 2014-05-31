@@ -4,6 +4,7 @@ import (
 	//"fmt"
 	"github.com/revel/revel"
 	"net/url"
+	"regexp"
 )
 
 // -- generator function ----
@@ -59,13 +60,30 @@ func (a *LinkedinAuthProvider) AuthenticateBase(parent *AuthProvider, params *re
 
 		// do the POST, then post
 		theJson, err := postRequestForJson(theUrl.Scheme+"://"+theUrl.Host+theUrl.Path, valueMap.Encode())
-		if err == nil {
-			resp = AuthResponse{Type: AuthResponseString, Response: theJson}
-			return resp, err
-		} else {
+		if err != nil {
 			resp = AuthResponse{Type: AuthResponseError, Response: err.Error()}
 			return resp, err
 		}
+
+		// parse response and return an expected JSON string; linkedin response is in JSONish format
+		tokenRe := regexp.MustCompile(`"access_token":"(.+)"`)
+		tokens := tokenRe.FindStringSubmatch(theJson)
+		if len(tokens) != 2 {
+			resp = AuthResponse{Type: AuthResponseError, Response: "Bad match on access token in LinkedinAuthProvider"}
+			return resp, err
+		}
+		token := tokens[1]
+
+		expiresRe := regexp.MustCompile(`"expires_in":([^&]+)`)
+		expires := expiresRe.FindStringSubmatch(theJson)
+		if len(expires) != 2 {
+			resp = AuthResponse{Type: AuthResponseError, Response: "Bad match on expires in LinkedinAuthProvider"}
+			return resp, err
+		}
+		expire := expires[1]
+
+		resp = AuthResponse{Type: AuthResponseToken, Response: `{"token":"` + token + `", "expires":` + expire + `}`}
+		return resp, err
 	}
 }
 
