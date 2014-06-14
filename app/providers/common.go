@@ -97,6 +97,8 @@ type Authorizer interface {
 	SpecializedAuthorizer
 }
 
+What of instansiating 
+
 type CommonAuthorizer interface {
 	Autheticate(parent *AuthProvider, params *revel.Params) (resp AuthResponse, err error)
 	IsAuthenticated() (check bool, err error)
@@ -106,6 +108,11 @@ type SpecializedAuthorizer interface {
 	AuthenticateBase(parent *AuthProvider, params *revel.Params) (resp AuthResponse, err error)
 	MapAuthInitatorValues(parent *AuthProvider) (v url.Values, err error)
 	MapExchangeValues(parent *AuthProvider, token string, verifier string) (v url.Values, err error)
+}
+
+type UserAuthRepository interface {
+	LoadUser()
+	SaveUser()
 }
 
 //----- function types ----------------

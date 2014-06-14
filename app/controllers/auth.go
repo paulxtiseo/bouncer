@@ -14,10 +14,13 @@ type Auth struct {
 // Authenticate() is the method that instantiates the requested provider
 // and initiates or completes the authentication process
 func (c Auth) Authenticate() revel.Result {
+
 	// find provider requested in /auth/:provider
 	requestedProvider := c.Params.Get("provider")
-	//revel.INFO.Printf("Authenticate() params: %+v\n\n", c.Params)
-	// check if we had a corresponding authconfig in app.conf
+
+	// TODO: check if already authenticated
+
+	// if not, check if we had a corresponding authconfig in app.conf
 	settings, foundSettings := providers.AppAuthConfigs[requestedProvider]
 	if foundSettings {
 		// use the generator function to create the linked provider for the request
@@ -25,7 +28,6 @@ func (c Auth) Authenticate() revel.Result {
 		if foundProvider {
 			provider := generator(&settings)
 			resp, err := provider.Authenticate(&provider, c.Params)
-			//revel.INFO.Printf("Authenticate() resp: %+v\n\n", resp)
 			if err != nil {
 				revel.ERROR.Printf("Error generating the auth URL: %+v\n", err)
 				return c.RenderError(errors.New(resp.Response)) // TODO: Do not output system errors
@@ -36,8 +38,6 @@ func (c Auth) Authenticate() revel.Result {
 					return c.RenderError(errors.New(resp.Response)) // TODO: Do not output system errors
 				case providers.AuthResponseRedirect:
 					return c.Redirect(resp.Response)
-				case providers.AuthResponseString:
-					return c.RenderText(resp.Response)
 				case providers.AuthResponseToken:
 					return c.RenderText(resp.Response) // TODO: add to session; store token in db
 				default:

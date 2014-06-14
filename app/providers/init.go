@@ -4,12 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/revel/revel"
+	"reflect"
 	"strings"
 )
 
-var AllowedProviderGenerators = make(map[string]NewAuthProvider)
-var AppAuthConfigs = make(map[string]AuthConfig)
-var SecurityKey string
+var allowedProviderGenerators = make(map[string]NewAuthProvider)
+var appAuthConfigs = make(map[string]AuthConfig)
+
+var userRepository UserAuthRepository
+var securityKey string
 
 func init() {
 
@@ -63,6 +66,14 @@ func init() {
 			}
 		} else {
 			revel.ERROR.Fatal("No auth.providersallowed setting was found in app.conf.")
+		}
+
+		// check if a function is provided to generate a UserAuthRepository
+		repo, found := revel.Config.String("auth.userrepogenerator")
+		if !found {
+			revel.WARN.Print("No auth.userrepogenerator set. Tokens will be stored in Session.")
+		} else {
+			// TODO: call the generator and set userRepository
 		}
 
 	})
